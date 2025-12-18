@@ -1,0 +1,5 @@
+com\trivyxa\controller\ContactController.class
+com\trivyxa\service\EmailService.class
+com\trivyxa\BackendApplication.class
+com\trivyxa\config\GmailConfig.class
+com\trivyxa\dto\ContactRequest.class
