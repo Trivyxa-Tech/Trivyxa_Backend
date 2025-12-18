@@ -1,73 +1,108 @@
 package com.trivyxa.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.trivyxa.dto.ContactRequest;
+
+import java.util.*;
 
 @Service
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    @Value("${brevo.api.key}")
+    private String apiKey;
 
-    private final String FROM_EMAIL = System.getenv("MAIL_USERNAME");
-    private final String TO_EMAIL   = System.getenv("MAIL_TO");
+    @Value("${brevo.sender.email}")
+    private String fromEmail;
+
+    @Value("${brevo.sender.name}")
+    private String senderName;
+
+    // Admin / receiver email (can be same as sender)
+    @Value("${brevo.sender.email}")
+    private String toEmail;
+
+    private static final String BREVO_URL =
+            "https://api.brevo.com/v3/smtp/email";
 
     public void sendContactMail(ContactRequest req) {
 
         try {
-            SimpleMailMessage mail = new SimpleMailMessage();
+            RestTemplate restTemplate = new RestTemplate();
 
-            mail.setFrom(FROM_EMAIL);       // ✅ IMPORTANT
-            mail.setTo(TO_EMAIL);           // ✅ configurable
-            mail.setSubject("📩 New Project Inquiry – TRIVYXA");
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("api-key", apiKey);
 
-            String body =
+            Map<String, Object> payload = new HashMap<>();
+
+            // Sender
+            payload.put("sender", Map.of(
+                    "email", fromEmail,
+                    "name", senderName
+            ));
+
+            // Receiver
+            payload.put("to", List.of(
+                    Map.of("email", toEmail, "name", "TRIVYXA Admin")
+            ));
+
+            payload.put("subject", "📩 New Project Inquiry – TRIVYXA");
+
+            String htmlContent =
+                    "<pre style='font-family: monospace'>" +
                     "========================================\n" +
                     "        🚀 NEW PROJECT INQUIRY\n" +
                     "========================================\n\n" +
 
-                    "Dear TRIVYXA Team,\n\n" +
-                    "You have received a new project inquiry from your website.\n\n" +
-
-                    "----------------------------------------\n" +
                     "👤 CLIENT DETAILS\n" +
                     "----------------------------------------\n" +
                     "• Name: " + req.getName() + "\n" +
                     "• Email: " + req.getEmail() + "\n" +
                     "• Phone: " + safe(req.getPhone(), "Not Provided") + "\n\n" +
 
-                    "----------------------------------------\n" +
                     "🧩 PROJECT INFORMATION\n" +
                     "----------------------------------------\n" +
                     "• Selected Service: " + safe(req.getService(), "Not Selected") + "\n" +
                     "• Estimated Budget: " + safe(req.getBudget(), "Not Specified") + "\n\n" +
 
-                    "----------------------------------------\n" +
                     "📝 PROJECT DESCRIPTION\n" +
                     "----------------------------------------\n" +
                     safe(req.getMessage(), "No description provided") + "\n\n" +
 
                     "========================================\n" +
-                    "       📅 Submitted via TRIVYXA.COM\n" +
-                    "========================================\n";
+                    "📅 Submitted via TRIVYXA.COM\n" +
+                    "========================================" +
+                    "</pre>";
 
-            mail.setText(body);
+            payload.put("htmlContent", htmlContent);
 
-            mailSender.send(mail);
+            HttpEntity<Map<String, Object>> entity =
+                    new HttpEntity<>(payload, headers);
 
-        } catch (MailException ex) {
-            // ❌ Do NOT crash the API
-            System.err.println("❌ Failed to send email: " + ex.getMessage());
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BREVO_URL,
+                    HttpMethod.POST,
+                    entity,
+                    String.class
+            );
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new RuntimeException("Brevo email failed");
+            }
+
+        } catch (Exception ex) {
+            System.err.println("❌ Brevo Email Error: " + ex.getMessage());
             throw new RuntimeException("Email sending failed");
         }
     }
 
     private String safe(String value, String fallback) {
-        return (value != null && !value.trim().isEmpty()) ? value : fallback;
+        return (value != null && !value.trim().isEmpty())
+                ? value
+                : fallback;
     }
 }
