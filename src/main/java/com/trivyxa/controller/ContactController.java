@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.trivyxa.dto.ContactRequest;
+import com.trivyxa.dto.ApiResponse;
 import com.trivyxa.service.EmailService;
 
 @RestController
