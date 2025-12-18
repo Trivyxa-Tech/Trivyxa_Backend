@@ -11,7 +11,7 @@ import com.trivyxa.service.EmailService;
 @RestController
 @RequestMapping("/api/contact")
 @CrossOrigin(
-    origins = "https://trivyxafrontend-production.up.railway.app",
+    origins = "https://trivyxafrontend-production-6c71.up.railway.app",
     allowedHeaders = "*",
     methods = { RequestMethod.POST, RequestMethod.OPTIONS }
 )
