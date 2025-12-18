@@ -1,29 +1,31 @@
 package com.trivyxa.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.trivyxa.dto.ContactRequest;
 import com.trivyxa.service.EmailService;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/contact")
+@CrossOrigin(
+    origins = "https://trivyxafrontend-production.up.railway.app",
+    allowedHeaders = "*",
+    methods = { RequestMethod.POST, RequestMethod.OPTIONS }
+)
 public class ContactController {
 
     @Autowired
     private EmailService emailService;
 
     @PostMapping
-    public String sendContact(@RequestBody ContactRequest req) {
+    public ResponseEntity<?> sendContact(@RequestBody ContactRequest req) {
 
-        // Send full request object to email service
         emailService.sendContactMail(req);
 
-        return "Success";
+        return ResponseEntity.ok().body(
+            new ApiResponse("SUCCESS", "Contact email sent successfully")
+        );
     }
 }
