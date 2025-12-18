@@ -35,9 +35,10 @@
 
         <!-- Email SMTP -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+
 
         <!-- Needed for JSON parsing -->
         <dependency>
